@@ -8,7 +8,7 @@
     "start:server": "npm --prefix server start",
     "dev:server": "npm --prefix server run dev",
     "build:web": "node scripts/build-web.cjs",
-    "build:desktop": "npm run build:web && electron-builder --win nsis",
+    "build:desktop": "npm run build:web && electron-builder --win nsis --publish never",
     "build:android": "npm run build:web && cap sync android"
   },
   "dependencies": {
@@ -44,6 +44,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     },
-    "npmRebuild": false
+    "npmRebuild": false,
+    "publish": null
   }
 }
