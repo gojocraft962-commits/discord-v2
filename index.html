@@ -1,1 +1,120 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090b16"><title>Apex Hub</title><link rel="icon" href="assets/icon.svg"><link rel="stylesheet" href="styles.css"></head><body><div class="app"><aside class="servers"><div class="brand">A<span>✦</span></div><button class="server active">A</button><button class="server">🎮</button><button class="server">🚀</button><button class="add">＋</button><div class="bottom">⚙</div></aside><aside class="sidebar"><div class="workspace"><div><b>APEX HUB</b><small>COMMUNITY SPACE</small></div><button id="workspaceMenu">⌄</button></div><div class="search">⌕ <input id="search" placeholder="Buscar canais e mensagens"></div><div class="section">SEUS CANAIS <button id="addChannel">＋</button></div><div class="channel active"># <span>geral</span></div><div class="channel"># <span>anúncios</span></div><div class="channel"># <span>memes</span></div><div class="channel"># <span>ajuda</span></div><div class="section voice-title">CANAIS DE VOZ</div><div class="channel">◖ <span>Lobby</span></div><div class="channel">◖ <span>Jogando Minecraft</span></div><div class="invite"><div class="invite-icon">✦</div><b>Convide sua galera</b><p>Crie uma comunidade com seus amigos.</p><button id="inviteBtn">Criar convite</button></div><div class="profile"><div class="avatar me">G</div><div><b>Gojo</b><small>Online</small></div><button>⚙</button><button id="mute">🎙</button></div></aside><main class="main"><header class="top"><div class="crumb"># <b id="channelName">geral</b><span class="topic">Um lugar para conversar e jogar.</span></div><div class="top-actions"><button>♧</button><button>?</button><div class="online-pill"><i></i> 3 online</div></div></header><div class="content"><section class="chat"><div class="welcome"><div class="welcome-mark">✦</div><h1>Bem-vindo ao <span>Apex Hub</span></h1><p>Este é o começo do canal <b>#geral</b>. Manda a primeira mensagem!</p></div><div id="messages" class="messages"><article class="message"><div class="avatar bot">A</div><div><div class="meta"><b>Apex Hub</b><span class="tag">BOT</span><time>Agora</time></div><p>Olá! 👋 O espaço está pronto. Convide seus amigos e comece a conversar.</p></div></article></div><form id="messageForm" class="composer"><button type="button" id="attach">＋</button><input id="messageInput" autocomplete="off" placeholder="Conversar em #geral..." maxlength="2000"><button type="button" id="emoji">☺</button><button class="send" type="submit">➤</button></form><div class="disclaimer">Apex Hub • Prévia local — conecte um servidor para mensagens entre dispositivos.</div></section><aside class="members"><div class="member-title">ONLINE — 3</div><div class="member"><div class="avatar bot">A</div><span>Apex Hub <small>Bot</small></span></div><div class="member"><div class="avatar me">G</div><span>Gojo <small>Fundador</small></span></div><div class="member"><div class="avatar friend">N</div><span>Neo <small>Jogando</small></span></div><div class="member-title offline">OFFLINE — 2</div><div class="member faded"><div class="avatar gray">M</div><span>Max</span></div><div class="member faded"><div class="avatar gray">L</div><span>Luna</span></div><div class="voice-card"><b>🎧 Sala de voz</b><p>Entre para conversar ao vivo.</p><button id="voiceBtn">Entrar na sala</button><small id="voiceStatus">Voz ainda não conectada</small></div></aside></div></main></div><div id="toast" role="status"></div><script src="app.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#1e1f22">
+  <title>Apex Hub</title>
+  <link rel="icon" href="assets/icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="servers" aria-label="Servidores">
+      <button class="server home active" title="Apex Hub" data-server="home"><span class="server-icon">A</span></button>
+      <div class="server-sep"></div>
+      <button class="server" title="Gaming" data-server="gaming"><span class="server-icon">🎮</span></button>
+      <button class="server" title="Dev" data-server="dev"><span class="server-icon">🚀</span></button>
+      <button class="server add" title="Adicionar servidor" id="addServer"><span class="server-icon">+</span></button>
+      <button class="server bottom" title="Configurações" id="settingsBtn"><span class="server-icon">⚙</span></button>
+    </nav>
+    <aside class="sidebar">
+      <header class="guild-header">
+        <button class="guild-name" id="guildMenu"><span>Apex Hub</span>
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+        </button>
+      </header>
+      <div class="search-wrap"><input id="search" type="search" placeholder="Buscar" autocomplete="off"></div>
+      <div class="channels" id="channelList">
+        <div class="category">
+          <button class="category-toggle" data-cat="text">
+            <svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+            CANAIS DE TEXTO
+          </button>
+          <div class="channel-group" data-group="text">
+            <button class="channel active" data-channel="geral"><span class="hash">#</span><span class="name">geral</span></button>
+            <button class="channel" data-channel="anuncios"><span class="hash">#</span><span class="name">anúncios</span></button>
+            <button class="channel" data-channel="memes"><span class="hash">#</span><span class="name">memes</span></button>
+            <button class="channel" data-channel="ajuda"><span class="hash">#</span><span class="name">ajuda</span></button>
+          </div>
+        </div>
+        <div class="category">
+          <button class="category-toggle" data-cat="voice">
+            <svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+            CANAIS DE VOZ
+          </button>
+          <div class="channel-group" data-group="voice">
+            <button class="channel voice" data-channel="lobby"><span class="voice-icon">🔊</span><span class="name">Lobby</span></button>
+            <button class="channel voice" data-channel="minecraft"><span class="voice-icon">🔊</span><span class="name">Jogando Minecraft</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="user-panel">
+        <div class="user-avatar me" id="userAvatar">G</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">Gojo</div>
+          <div class="user-status" id="userStatus">Online</div>
+        </div>
+        <button class="user-btn" id="muteBtn" title="Silenciar">🎙</button>
+        <button class="user-btn" id="deafenBtn" title="Ensurdecer">🎧</button>
+        <button class="user-btn" id="accountBtn" title="Conta">⚙</button>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="chat-header">
+        <div class="channel-title">
+          <span class="hash">#</span>
+          <h1 id="channelName">geral</h1>
+          <div class="divider"></div>
+          <span class="topic" id="channelTopic">Um lugar para conversar e jogar.</span>
+        </div>
+        <div class="header-actions">
+          <button title="Notificações">🔔</button>
+          <button title="Membros" id="toggleMembers">👥</button>
+          <div class="online-count"><span class="dot"></span> <span id="onlineCount">3</span> online</div>
+        </div>
+      </header>
+      <div class="chat-body">
+        <section class="messages-area">
+          <div id="messages" class="messages">
+            <div class="welcome">
+              <div class="welcome-icon">#</div>
+              <h2>Bem-vindo a #<span id="welcomeChannel">geral</span>!</h2>
+              <p>Este é o começo do canal. Manda a primeira mensagem!</p>
+            </div>
+          </div>
+          <form id="messageForm" class="composer">
+            <button type="button" class="composer-btn" id="attachBtn" title="Anexar">+</button>
+            <div class="composer-input-wrap">
+              <input id="messageInput" autocomplete="off" placeholder="Conversar em #geral" maxlength="2000">
+            </div>
+            <button type="button" class="composer-btn" id="emojiBtn" title="Emoji">☺</button>
+            <button type="submit" class="composer-send" title="Enviar">➤</button>
+          </form>
+        </section>
+        <aside class="members" id="membersPanel">
+          <div class="members-section">
+            <h3>ONLINE — <span id="onlineMembersCount">3</span></h3>
+            <div class="member"><div class="avatar bot">A</div><div class="member-info"><span class="member-name">Apex Hub</span><span class="member-role">Bot</span></div><span class="status online"></span></div>
+            <div class="member"><div class="avatar me" id="memberMeAvatar">G</div><div class="member-info"><span class="member-name" id="memberMeName">Gojo</span><span class="member-role">Fundador</span></div><span class="status online"></span></div>
+            <div class="member"><div class="avatar friend">N</div><div class="member-info"><span class="member-name">Neo</span><span class="member-role">Jogando</span></div><span class="status online"></span></div>
+          </div>
+          <div class="members-section">
+            <h3>OFFLINE — 2</h3>
+            <div class="member offline"><div class="avatar gray">M</div><div class="member-info"><span class="member-name">Max</span></div><span class="status offline"></span></div>
+            <div class="member offline"><div class="avatar gray">L</div><div class="member-info"><span class="member-name">Luna</span></div><span class="status offline"></span></div>
+          </div>
+          <div class="voice-card">
+            <b>🎧 Sala de voz</b>
+            <p>Entre para conversar ao vivo.</p>
+            <button id="voiceBtn">Entrar na sala</button>
+            <small id="voiceStatus">Voz ainda não conectada</small>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <div id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
