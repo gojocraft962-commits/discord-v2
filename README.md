@@ -17,7 +17,7 @@ Apex Hub é um projeto de comunidade/chat com interface gamer para navegador, An
 Requer Node.js 20 ou superior.
 
 1. Instale dependências do app: `npm install`.\n2. Instale dependências do backend: `npm --prefix server install`.
-3. Copie `.env.example` para `.env`.
+3. Copie `server/.env.example` para `server/.env`.
 4. Troque `JWT_SECRET` por uma chave aleatória forte (mínimo 32 caracteres).
 5. Inicie o backend: `npm run dev:server`.
 6. Abra `index.html` por um servidor local ou publique o frontend em HTTPS.
