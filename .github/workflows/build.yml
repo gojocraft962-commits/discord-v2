@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   windows:
     runs-on: windows-latest
@@ -11,12 +13,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run build:desktop
+          cache: npm
+      - name: Install desktop dependencies
+        run: npm install
+      - name: Build Windows installer
+        run: npm run build:desktop
       - uses: actions/upload-artifact@v4
         with:
           name: Apex-Hub-Windows-EXE
           path: release/*.exe
+          if-no-files-found: error
+          retention-days: 14
   android:
     runs-on: ubuntu-latest
     steps:
@@ -24,17 +31,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
-      - run: npm install
-      - run: npm run build:web
-      - run: npx cap add android
-      - run: npx cap sync android
-      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Install Android dependencies
+        run: npm install
+      - name: Build web assets
+        run: npm run build:web
+      - name: Add Android platform
+        run: npx cap add android
+      - name: Sync Capacitor
+        run: npx cap sync android
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: Apex-Hub-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
