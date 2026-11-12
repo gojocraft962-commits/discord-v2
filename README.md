@@ -16,12 +16,12 @@ Apex Hub é um projeto de comunidade/chat com interface gamer para navegador, An
 
 Requer Node.js 20 ou superior.
 
-1. Instale dependências: `npm install`.
-2. Copie `.env.example` para `.env`.
-3. Troque `JWT_SECRET` por uma chave aleatória forte (mínimo 32 caracteres).
-4. Inicie o backend: `npm run dev:server`.
-5. Abra `index.html` por um servidor local ou publique o frontend em HTTPS.
-6. Na janela **Entrar**, informe a URL do backend (por exemplo, `http://localhost:3000` quando estiver no mesmo computador), crie uma conta e entre.
+1. Instale dependências do app: `npm install`.\n2. Instale dependências do backend: `npm --prefix server install`.
+3. Copie `.env.example` para `.env`.
+4. Troque `JWT_SECRET` por uma chave aleatória forte (mínimo 32 caracteres).
+5. Inicie o backend: `npm run dev:server`.
+6. Abra `index.html` por um servidor local ou publique o frontend em HTTPS.
+7. Na janela **Entrar**, informe a URL do backend (por exemplo, `http://localhost:3000` quando estiver no mesmo computador), crie uma conta e entre.
 
 A API tem endpoint de verificação em `/health`. Para usar no celular, o backend precisa estar publicado ou acessível pela rede local; `localhost` no celular aponta para o próprio celular, não para o PC.
 
@@ -47,3 +47,8 @@ O workflow em `.github/workflows/build.yml` tenta gerar o instalador Windows e o
 - Use HTTPS em produção e configure `CLIENT_ORIGIN` para as origens reais do frontend.
 - Use um segredo JWT aleatório e mantenha backups do banco.
 - A API ainda não implementa permissões completas por servidor/canal, recuperação de senha ou verificação de e-mail.
+
+
+## Correções Android e Windows
+
+As dependências nativas SQLite do backend foram isoladas em `server/package.json`, para que não sejam instaladas no pacote Android ou no instalador Windows. O EXE não recompila módulos nativos que o cliente não utiliza. Em dispositivos instalados, configure uma URL HTTPS pública da API; `localhost` só serve quando o servidor está no mesmo dispositivo. O workflow agora falha claramente se o APK ou EXE não for produzido.
