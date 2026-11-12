@@ -12,10 +12,12 @@ import Database from 'better-sqlite3';
 const app = express();
 const server = http.createServer(app);
 const allowed = (process.env.CLIENT_ORIGIN || '*').split(',').map(x => x.trim());
-const corsOptions = { origin: (origin, cb) => {
-  if (!origin || allowed.includes('*') || allowed.includes(origin)) return cb(null, true);
-  cb(new Error('Origin não permitido'));
-}};
+const corsOptions = {
+  origin: (origin, cb) => {
+    if (!origin || allowed.includes('*') || allowed.includes(origin)) return cb(null, true);
+    cb(new Error('Origin não permitido'));
+  }
+};
 const io = new Server(server, { cors: corsOptions, maxHttpBufferSize: 1e6 });
 const db = new Database(process.env.DB_FILE || 'apex-hub.sqlite');
 const secret = process.env.JWT_SECRET;
@@ -87,35 +89,105 @@ app.get('/channels/:channel/messages', authenticate, (req, res) => {
   const rows = db.prepare('SELECT id,channel,user_id AS userId,username,body,created_at AS createdAt FROM messages WHERE channel=? ORDER BY id DESC LIMIT 50').all(channel);
   res.json(rows.reverse());
 });
+
+const onlineUsers = new Map();
+
+function getChannelPresence(channel) {
+  const users = [];
+  const seen = new Set();
+  for (const u of onlineUsers.values()) {
+    if (u.channel === channel && !seen.has(u.userId)) {
+      seen.add(u.userId);
+      users.push({ userId: u.userId, username: u.username });
+    }
+  }
+  return users;
+}
+
+function broadcastPresence(channel) {
+  io.to(channel).emit('presence:update', { channel, users: getChannelPresence(channel) });
+}
+
 function socketAuth(socket, next) {
   try {
     socket.user = jwt.verify(socket.handshake.auth?.token || '', secret);
     next();
-  } catch { next(new Error('Não autenticado')); }
+  } catch {
+    next(new Error('Não autenticado'));
+  }
 }
 io.use(socketAuth);
+
 io.on('connection', socket => {
+  const userId = Number(socket.user.sub);
+  const username = socket.user.username;
+
+  onlineUsers.set(socket.id, { userId, username, channel: null });
+  socket.emit('connection:ready', { userId, username });
+
   socket.on('channel:join', channelName => {
     const channel = String(channelName || 'geral').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
     if (!channel) return;
-    for (const room of socket.rooms) if (room !== socket.id) socket.leave(room);
+
+    const prev = onlineUsers.get(socket.id);
+    const prevChannel = prev?.channel;
+
+    for (const room of socket.rooms) {
+      if (room !== socket.id) socket.leave(room);
+    }
     socket.join(channel);
-    const history = db.prepare('SELECT id,channel,user_id AS userId,username,body,created_at AS createdAt FROM messages WHERE channel=? ORDER BY id DESC LIMIT 50').all(channel).reverse();
+    onlineUsers.set(socket.id, { userId, username, channel });
+
+    if (prevChannel && prevChannel !== channel) broadcastPresence(prevChannel);
+    broadcastPresence(channel);
+
+    const history = db
+      .prepare('SELECT id,channel,user_id AS userId,username,body,created_at AS createdAt FROM messages WHERE channel=? ORDER BY id DESC LIMIT 50')
+      .all(channel)
+      .reverse();
     socket.emit('channel:history', history);
+    socket.emit('presence:update', { channel, users: getChannelPresence(channel) });
   });
+
   socket.on('message:send', payload => {
     const channel = String(payload?.channel || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
     const body = String(payload?.body || '').trim();
     if (!channel || !body || body.length > 2000 || !socket.rooms.has(channel)) return;
-    const result = db.prepare('INSERT INTO messages(channel,user_id,username,body) VALUES(?,?,?,?)')
-      .run(channel, Number(socket.user.sub), socket.user.username, body);
-    const message = { id: Number(result.lastInsertRowid), channel, userId: Number(socket.user.sub), username: socket.user.username, body, createdAt: new Date().toISOString() };
+
+    const result = db
+      .prepare('INSERT INTO messages(channel,user_id,username,body) VALUES(?,?,?,?)')
+      .run(channel, userId, username, body);
+
+    const message = {
+      id: Number(result.lastInsertRowid),
+      channel,
+      userId,
+      username,
+      body,
+      createdAt: new Date().toISOString()
+    };
     io.to(channel).emit('message:new', message);
+    socket.to(channel).emit('typing:stop', { userId, username, channel });
   });
-  // WebRTC signaling only: media stays peer-to-peer and requires HTTPS in production.
+
+  socket.on('typing:start', payload => {
+    const channel = String(payload?.channel || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+    if (!channel || !socket.rooms.has(channel)) return;
+    socket.to(channel).emit('typing:start', { userId, username, channel });
+  });
+
+  socket.on('typing:stop', payload => {
+    const channel = String(payload?.channel || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+    if (!channel) return;
+    socket.to(channel).emit('typing:stop', { userId, username, channel });
+  });
+
   socket.on('call:join', room => {
     const safeRoom = 'call-' + String(room || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48);
-    if (safeRoom.length > 5) { socket.join(safeRoom); socket.to(safeRoom).emit('call:peer', { peerId: socket.id }); }
+    if (safeRoom.length > 5) {
+      socket.join(safeRoom);
+      socket.to(safeRoom).emit('call:peer', { peerId: socket.id });
+    }
   });
   for (const event of ['webrtc:offer', 'webrtc:answer', 'webrtc:ice']) {
     socket.on(event, payload => {
@@ -123,9 +195,16 @@ io.on('connection', socket => {
       if (target && target !== socket.id) io.to(target).emit(event, { from: socket.id, data: payload.data });
     });
   }
+
   socket.on('disconnect', () => {
-    for (const room of socket.rooms) if (room.startsWith('call-')) socket.to(room).emit('call:peer-left', { peerId: socket.id });
+    const info = onlineUsers.get(socket.id);
+    onlineUsers.delete(socket.id);
+    if (info?.channel) broadcastPresence(info.channel);
+    for (const room of socket.rooms) {
+      if (room.startsWith('call-')) socket.to(room).emit('call:peer-left', { peerId: socket.id });
+    }
   });
 });
+
 const port = Number(process.env.PORT || 3000);
 server.listen(port, () => console.log('Apex Hub API online na porta ' + port));
